@@ -30,6 +30,14 @@ vim.keymap.set("i", "cll", "console.log()<Esc><S-f>(a")
 -- Adds a line underneath with padding!
 vim.keymap.set("n", "<leader>o", "<Esc>o<c-return><c-return><Esc>ki")
 
+
+vim.keymap.set("n", "<leader>ru", function()
+  local current_file = vim.fn.expand('%:p')
+  vim.cmd("!cargo run " .. current_file)
+end)
+
+vim.keymap.set("n", "<leader>git", function() vim.cmd.LazyGit() end)
+
 -- Prettier
 vim.g["prettier#autoformat"] = 1
 vim.g["prettier#config#semi"] = false
@@ -47,3 +55,6 @@ vim.api.nvim_create_autocmd({ 'BufWritePre' }, {
     print("Formatted file with prettier.")
   end,
 })
+
+vim.diagnostic.config({ virtual_text = false })
+vim.cmd [[autocmd! CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]

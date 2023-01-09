@@ -3,6 +3,7 @@ local install_path = vim.fn.stdpath 'data' .. '/site/pack/packer/start/packer.nv
 local is_bootstrap = false
 if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
   is_bootstrap = true
+  -- When you get an error here run: TSUpdate vim
   vim.fn.system { 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/packer.nvim', install_path }
   vim.cmd [[packadd packer.nvim]]
 end
@@ -81,11 +82,13 @@ require('packer').startup(function(use)
   use 'lewis6991/gitsigns.nvim'
 
   use { "catppuccin/nvim", as = "catppuccin" }
+  -- use 'joshdick/onedark.vim'
   use 'nvim-lualine/lualine.nvim' -- Fancier statusline
   use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
   use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
-
+  use 'norcalli/nvim-colorizer.lua'
+  use 'kdheepak/lazygit.nvim'
   -- Fuzzy Finder (files, lsp, etc)
   use { 'nvim-telescope/telescope.nvim', branch = '0.1.x', requires = { 'nvim-lua/plenary.nvim' } }
 
@@ -127,6 +130,8 @@ vim.api.nvim_create_autocmd('BufWritePost', {
 -- [[ Setting options ]]
 -- See `:help vim.o`
 
+vim.o.completeopt = 'menu,noinsert,noselect'
+
 -- Keep cursor in the middle
 vim.opt.scrolloff = 10
 
@@ -153,7 +158,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 
 -- Decrease update time
-vim.o.updatetime = 250
+vim.o.updatetime = 50
 vim.wo.signcolumn = 'yes'
 
 vim.o.tabstop = 4
@@ -162,7 +167,6 @@ vim.o.expandtab = true
 
 -- Set colorscheme
 vim.o.termguicolors = true
-vim.cmd [[colorscheme catppuccin]]
 
 -- Set completeopt to have a better completion experience
 vim.o.completeopt = 'menuone,noselect'
@@ -193,6 +197,11 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   pattern = '*',
 })
 
+require("catppuccin").setup({
+  transparent_background = true,
+  term_colors = true
+})
+vim.cmd [[colorscheme catppuccin]]
 -- Set lualine as statusline
 -- See `:help lualine.txt`
 require('lualine').setup {
@@ -204,6 +213,7 @@ require('lualine').setup {
   },
 }
 
+require 'colorizer'.setup()
 -- Enable Comment.nvim
 require('Comment').setup()
 
@@ -261,7 +271,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'typescript', 'help' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'typescript', 'help', 'vim' },
 
   highlight = { enable = true },
   indent = { enable = true, disable = { 'python' } },
@@ -373,25 +383,17 @@ local on_attach = function(_, bufnr)
     vim.lsp.buf.format()
   end, { desc = 'Format current buffer with LSP' })
 
-  -- vim.api.nvim_create_autocmd("BufWritePost", {
-  --   group = vim.api.nvim_create_augroup("LspFormatting", { clear = true }),
-  --   buffer = bufnr,
-  --   callback = function() vim.lsp.buf.format() end
-  -- })
-
+  local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
+  vim.api.nvim_create_autocmd("BufWritePre", {
+    group = augroup,
+    buffer = bufnr,
+    callback = function()
+      vim.lsp.buf.format()
+    end
+  })
 end
 
--- Enable the following language servers
---  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
---  Add any additional override configuration in the following tables. They will be passed to
---  the `settings` field of the server config. You must look up that documentation yourself.
 local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
-  -- tsserver = {},
-
   sumneko_lua = {
     Lua = {
       workspace = { checkThirdParty = false },
